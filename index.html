@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LumaLink</title>
+<style>
+:root{--bg:#13111c;--panel:#1c1929;--panel2:#252137;--line:#33304a;--tx:#ece9f6;--mut:#9a95b5;--ac:#ff5c8a;--ok:#5fd6a4;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 "Avenir Next",Avenir,"Segoe UI",system-ui,sans-serif;min-height:100vh}
+h1,h2,h3{margin:0;font-weight:600}
+button,select,input{font:inherit;color:inherit}
+button{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 13px;cursor:pointer}
+button:hover{border-color:var(--ac)}
+button.on,button.pri{background:var(--ac);border-color:var(--ac);color:#1a0610;font-weight:600}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--ok);outline-offset:2px}
+input,select{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 9px}
+input[type=range]{width:100%;accent-color:var(--ac);padding:0}
+input[type=color]{width:56px;height:38px;padding:2px;cursor:pointer}
+header{display:flex;gap:14px;align-items:center;padding:14px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+header h1{font-size:20px;margin-right:auto}
+.logo{height:110px;width:auto;max-width:100%;display:block}
+nav{display:flex;gap:6px}
+#key{width:230px}
+main{display:grid;grid-template-columns:230px 1fr;gap:18px;padding:18px 20px;max-width:1150px;margin:0 auto}
+@media(max-width:760px){main{grid-template-columns:1fr}}
+aside{display:flex;flex-direction:column;gap:8px}
+.dev{text-align:left;display:flex;flex-direction:column}
+.dev small{color:var(--mut)}
+.dev.sel{border-color:var(--ac);background:var(--panel)}
+section.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+section.card h3{margin-bottom:10px;font-size:15px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sw{width:30px;height:30px;border-radius:50%;padding:0;border:2px solid var(--line)}
+.scenes{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px;max-height:260px;overflow:auto;margin-top:10px}
+.scenes button{text-align:left;font-size:13px}
+.seg{display:grid;grid-template-columns:repeat(auto-fill,40px);gap:5px;margin-top:8px}
+.seg button{width:40px;height:34px;padding:0;font-size:12px}
+.mut{color:var(--mut);font-size:13px}
+#toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--line);padding:9px 16px;border-radius:10px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw}
+#toast.show{opacity:1}
+#toast.err{border-color:var(--ac)}
+canvas{width:100%;height:110px;background:var(--bg);border:1px solid var(--line);border-radius:10px;cursor:pointer;display:block}
+audio{width:100%;margin-top:10px}
+.cue{display:grid;grid-template-columns:70px 1fr auto;gap:10px;align-items:center;padding:7px 10px;border-radius:8px;border:1px solid var(--line);margin-top:6px}
+.cue.fired{border-color:var(--ok)}
+.hide{display:none!important}
+#pop,#cfg{position:fixed;top:60px;right:20px;width:340px;max-width:calc(100vw - 40px);max-height:70vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;z-index:5;box-shadow:0 10px 30px #0008}
+#pop table{width:100%;border-collapse:collapse;margin:8px 0;font-size:13px}
+#pop th{text-align:left;color:var(--mut);font-weight:500}
+#pop td,#pop th{padding:4px 6px;border-bottom:1px solid var(--line)}
+#pop td:nth-child(n+2),#pop th:nth-child(n+2){text-align:right}
+#pop .warn{color:var(--ac);font-weight:600}
+label.f{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--mut)}
+</style>
+</head>
+<body>
+<header>
+  <h1><img class="logo" alt="LumaLink" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDEyMDAgNDAwIiByb2xlPSJpbWciIGFyaWEtbGFiZWxsZWRieT0idGl0bGUgZGVzYyI+CiAgPHRpdGxlIGlkPSJ0aXRsZSI+THVtYUxpbms8L3RpdGxlPgogIDxkZXNjIGlkPSJkZXNjIj5BIGdsb3dpbmcgY29ubmVjdGVkIGxpZ2h0IG1hcmsgcGFpcmVkIHdpdGggdGhlIEx1bWFMaW5rIHdvcmRtYXJrLjwvZGVzYz4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iYmVhbSIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiM1NUY1RDIiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIwLjUyIiBzdG9wLWNvbG9yPSIjM0JCOEZGIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzhCNkNGRiIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0id29yZCIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjAiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNGNEY4RkYiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjQTlCOUQ0Ii8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPGZpbHRlciBpZD0iZ2xvdyIgeD0iLTYwJSIgeT0iLTYwJSIgd2lkdGg9IjIyMCUiIGhlaWdodD0iMjIwJSI+CiAgICAgIDxmZUdhdXNzaWFuQmx1ciBzdGREZXZpYXRpb249IjkiIHJlc3VsdD0iYmx1ciIvPgogICAgICA8ZmVNZXJnZT48ZmVNZXJnZU5vZGUgaW49ImJsdXIiLz48ZmVNZXJnZU5vZGUgaW49IlNvdXJjZUdyYXBoaWMiLz48L2ZlTWVyZ2U+CiAgICA8L2ZpbHRlcj4KICA8L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjEyMDAiIGhlaWdodD0iNDAwIiByeD0iMzgiIGZpbGw9IiMwODExMUYiLz4KICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg3OCA3MikiPgogICAgPHBhdGggZD0iTTg0IDQwdjQ0TTg0IDE0OHY1Mk00MCAxMDRIMjBNMTQ4IDEwNGgyME01MiA3MiAzNyA1N00xMTYgMTM2bDE1IDE1TTExNiA3MmwxNS0xNU01MiAxMzZsLTE1IDE1IiBmaWxsPSJub25lIiBzdHJva2U9InVybCgjYmVhbSkiIHN0cm9rZS13aWR0aD0iMTAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsdGVyPSJ1cmwoI2dsb3cpIi8+CiAgICA8cGF0aCBkPSJNODQgNzhjLTE3IDAtMzAgMTMtMzAgMjkgMCAxMSA2IDIwIDE1IDI1djE1aDMwdi0xNWM5LTUgMTUtMTQgMTUtMjUgMC0xNi0xMy0yOS0zMC0yOVoiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0VBRjZGRiIgc3Ryb2tlLXdpZHRoPSI5IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgICA8cGF0aCBkPSJNNzIgMTYwaDI0TTc2IDE3MWgxNiIgc3Ryb2tlPSJ1cmwoI2JlYW0pIiBzdHJva2Utd2lkdGg9IjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogICAgPGNpcmNsZSBjeD0iODQiIGN5PSIxMDciIHI9IjkiIGZpbGw9InVybCgjYmVhbSkiIGZpbHRlcj0idXJsKCNnbG93KSIvPgogICAgPHBhdGggZD0iTTExNyAxODFoNjlhMjQgMjQgMCAwIDAgMjQtMjR2LTciIGZpbGw9Im5vbmUiIHN0cm9rZT0idXJsKCNiZWFtKSIgc3Ryb2tlLXdpZHRoPSI4IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICAgIDxjaXJjbGUgY3g9IjIxMCIgY3k9IjEzNyIgcj0iNyIgZmlsbD0iIzU1RjVEMiIvPgogICAgPHBhdGggZD0iTTE4NiAxODFoMzQiIHN0cm9rZT0iIzU1RjVEMiIgc3Ryb2tlLXdpZHRoPSI4IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8L2c+CiAgPHRleHQgeD0iMzUwIiB5PSIyMTgiIGZpbGw9InVybCgjd29yZCkiIGZvbnQtZmFtaWx5PSJTZWdvZSBVSSwgSW50ZXIsIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjExMiIgZm9udC13ZWlnaHQ9IjY1MCIgbGV0dGVyLXNwYWNpbmc9Ii01Ij5MdW1hPHRzcGFuIGZpbGw9InVybCgjYmVhbSkiPkxpbms8L3RzcGFuPjwvdGV4dD4KICA8cGF0aCBkPSJNMzU1IDI2Nmg0NjIiIHN0cm9rZT0iIzFCMkE0MCIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgPHRleHQgeD0iMzU4IiB5PSIzMDYiIGZpbGw9IiM3RjkxQUEiIGZvbnQtZmFtaWx5PSJTZWdvZSBVSSwgSW50ZXIsIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjI1IiBmb250LXdlaWdodD0iNTAwIiBsZXR0ZXItc3BhY2luZz0iNiI+R09WRUUgTElHSFQgQ09OVFJPTDwvdGV4dD4KPC9zdmc+DQoNCg0K"></h1>
+  <nav><button id="tabC" class="on">Control</button><button id="tabM">Music sync</button><button id="tabS">Schedule</button></nav>
+  <button id="cfgBtn" aria-label="Settings" title="Settings">⚙</button>
+  <button id="stats" aria-expanded="false" title="Show API usage">API calls today: 0/10,000</button>
+  <input id="key" type="password" placeholder="Govee API key" aria-label="Govee API key">
+  <button id="connect" class="pri">Connect</button>
+  <button id="demo">Try demo</button>
+</header>
+<main>
+  <aside id="devs"><p class="mut">Enter your API key and press Connect. Get a key in the Govee Home app: Profile → Settings → Apply for API Key.</p></aside>
+  <div>
+    <div id="control"><p class="mut">Select a device to see its controls.</p></div>
+    <div id="music" class="hide">
+      <section class="card">
+        <h3>1. Playlist</h3>
+        <div class="row"><input type="file" id="file" accept="audio/*" multiple><span class="mut">Add one or more songs. Each song keeps its own light changes.</span></div><div id="plist"></div>
+        <canvas id="wave" width="1000" height="110" aria-label="Waveform. Click to seek."></canvas>
+        <audio id="audio" controls></audio>
+        <div class="row" style="margin-top:8px"><button id="restart" class="pri">↺ Start from the beginning</button><button id="rewind">⏮ Go to beginning (don't play)</button><button id="prev">⏮ Previous</button><button id="next">Next ⏭</button><label class="f">When a song ends<select id="rep"><option value="all">Repeat the playlist</option><option value="one">Repeat this song</option><option value="list">Stop after the last song</option></select></label></div>
+      </section>
+      <section class="card">
+        <h3>2. Add or edit a light change</h3>
+        <div class="row">
+          <label class="f">Time (seconds)<input id="cT" type="number" min="0" step="0.1" value="0" style="width:90px"></label>
+          <button id="useNow" title="Use the current playback position">Use current time</button>
+          <label class="f">Light<select id="cD"></select></label>
+          <label class="f">Change<select id="cType">
+            <option value="color">Color</option><option value="scene">Scene</option><option value="brightness">Brightness</option>
+            <option value="temp">White temperature</option><option value="power">Power</option></select></label>
+          <label class="f">Value<span id="cVal"></span></label>
+          <button id="addCue" class="pri">Add</button><button id="cCancel" class="hide">Cancel edit</button>
+        </div>
+        <p class="mut" id="cHint"></p>
+      </section>
+      <section class="card">
+        <h3>3. Light changes for <span id="tname" style="color:var(--ac)">(no song yet)</span></h3>
+        <div class="row"><input id="exName" placeholder="File name" aria-label="Export file name" style="width:210px"><button id="expo">Export</button><button id="saveShow" title="Upload this song and its light changes so the server can schedule it">Save as scheduled show</button><label class="mut"><input type="file" id="impo" accept=".json" class="hide"><button onclick="impo.click()">Import</button></label><button id="clr">Clear all</button></div>
+        <div id="cues"></div>
+        <p class="mut">Govee limits each device to about 10 commands per minute, so space changes at least 6 seconds apart on the same light.</p>
+      </section>
+    </div>
+    <div id="sched" class="hide">
+      <section class="card">
+        <h3 id="sTitle">New schedule</h3>
+        <div class="row">
+          <label class="f">Name<input id="sN" placeholder="Evening glow"></label>
+          <label class="f" id="sDL">Light<select id="sD"></select></label>
+          <label class="f">When<select id="sM"><option value="at">At a set time</option><option value="every">Repeat every…</option><option value="show">Play a music show at a set time</option></select></label>
+        </div>
+        <div class="row" id="sAt" style="margin-top:8px"><label class="f">Time<input type="time" id="sT" value="19:00"></label><label class="f" id="sAEL">Ends at (optional)<input type="time" id="sAtEnd"></label><label class="f" id="sGL">Seconds between steps<input type="number" id="sG" min="0" value="10" style="width:90px"></label></div>
+        <div class="row hide" id="sEv" style="margin-top:8px"><label class="f">Every (minutes)<input type="number" id="sI" min="1" value="5" style="width:90px"></label><label class="f">From<input type="time" id="sF" value="00:00"></label><label class="f">Until (end time)<input type="time" id="sU" value="23:59"></label><label class="row" style="align-self:end"><input type="checkbox" id="sOffEnd"> Turn the lights off at the end</label></div>
+        <div class="row hide" id="sShow" style="margin-top:8px"><label class="f">Show<select id="sS"></select></label><label class="f">Stop at (optional)<input type="time" id="sEnd"></label><label class="row" style="align-self:end"><input type="checkbox" id="sLoop"> Repeat the show until then</label><span class="mut">Save shows from the Music sync tab.</span></div>
+        <div class="row" id="sDays" style="margin-top:8px"></div>
+        <div class="row" style="margin-top:8px"><label class="f">Active from date (optional)<input type="date" id="sDF"></label><label class="f">Until date (optional)<input type="date" id="sDU"></label><span class="mut">Set both to the same day for a one-time schedule.</span></div>
+        <div id="sStepBox"><h3 style="margin-top:14px">Steps (scenes, colors and more)</h3>
+        <p class="mut" id="sHelp"></p>
+        <div class="row">
+          <label class="f">Change<select id="sType"><option value="color">Color</option><option value="scene">Scene</option><option value="brightness">Brightness</option><option value="temp">White temperature</option><option value="power">Power</option></select></label>
+          <label class="f">Value<span id="sVal"></span></label>
+          <button id="sAdd">Add step</button>
+        </div>
+        <p class="mut" id="sHint"></p>
+        <div id="sSteps"></div></div>
+        <div class="row" style="margin-top:10px"><button id="sSave" class="pri">Save schedule</button><button id="sCancel" class="hide">Cancel edit</button></div>
+      </section>
+      <section class="card">
+        <h3>Music shows on the server</h3>
+        <p class="mut">Save a song and its light changes from the Music sync tab, then schedule it above. The server plays the song through this PC's speakers and runs the lights, with no browser open.</p>
+        <div id="showNow"></div><div id="showList"></div>
+      </section>
+      <section class="card">
+        <h3>Your schedules</h3>
+        <p class="mut">Schedules run on the PC that hosts LumaLink, in the background. They keep running when this page is closed.</p>
+        <div class="row" style="margin:8px 0"><input id="exSched" placeholder="File name" aria-label="Export file name" style="width:210px"><button id="expSched">Export schedules</button><button id="impSched">Import</button><input type="file" id="impSchedF" accept=".json" class="hide"></div>
+        <p class="mut">Exports include your schedules and the light changes of your saved shows. Song audio files are not included.</p>
+        <div id="sList"></div>
+      </section>
+    </div>
+  </div>
+</main>
+<div id="cfg" class="hide" role="dialog" aria-label="Settings"><h3>Settings</h3>
+<label class="row"><input type="checkbox" id="lanOn"> Use the local network (LAN) when a light supports it</label>
+<p class="mut" id="lanInfo">Power, brightness, color and white temperature then go straight to the light over your Wi-Fi, with no internet limits. Turn on LAN Control for each light in the Govee Home app. Scenes still use the internet.</p>
+<div class="row"><button id="scanLan">Find lights on my network</button><button id="saveCfg" class="pri">Save</button></div></div>
+<div id="pop" class="hide" role="dialog" aria-label="API usage"></div>
+<div id="toast"></div>
+<script>
+const $=s=>document.querySelector(s), esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let key='',hasKey=false, demo=false, devices=[], cur=null, scenes={}, diy={}, cues=[];
+let cueStore={};try{cueStore=JSON.parse(localStorage.goveeCues||'{}')}catch(e){}if(!cueStore||Array.isArray(cueStore))cueStore={};
+$('#key').value=key;
+/* Govee's own groups (SameModeGroup etc.) are hidden; use your own groups instead */
+const normDevs=l=>l.filter(d=>!/Group$/.test(d.sku||''));
+let groups=[],shows=[],playing=null;
+const gMembers=g=>devices.filter(d=>g.members.includes(d.device));
+const gName=id=>{const g=groups.find(x=>x.id===id);return g?'Group: '+g.name:null};
+const sv=(d,v)=>v&&v.byDevice?v.byDevice[d.device]:v; /* a group scene holds each light's own scene value */
+function vgroup(g){const ms=gMembers(g),caps=[];
+  ['powerSwitch','brightness','colorRgb','colorTemperatureK','lightScene'].forEach(i=>{const m=ms.map(d=>cap(d,i)).find(Boolean);if(m)caps.push(m)});
+  return{isGroup:true,group:g,members:ms,device:g.id,deviceName:g.name,sku:'Group',capabilities:caps}}
+function rebuildGroupScenes(){groups.forEach(g=>{ /* a group only lists scenes that EVERY scene-capable light in it has */
+  const ms=gMembers(g).filter(d=>cap(d,'lightScene'));
+  if(!ms.length||ms.some(d=>!scenes[d.device])){delete scenes[g.id];return}
+  const m=new Map();
+  ms.forEach((d,k)=>{const seen=new Set();
+    scenes[d.device].forEach(o=>{const key=o.name.trim().toLowerCase();if(seen.has(key))return;seen.add(key);
+      if(k===0)m.set(key,{name:o.name,byDevice:{[d.device]:o.value}});else if(m.has(key))m.get(key).byDevice[d.device]=o.value});
+    if(k>0)[...m.keys()].forEach(key=>{if(!seen.has(key))m.delete(key)})});
+  const out=[...m.values()].sort((a,b)=>a.name.localeCompare(b.name)).map(x=>({name:x.name,value:{name:x.name,byDevice:x.byDevice}}));
+  if(out.length)scenes[g.id]=out;else delete scenes[g.id]})}
+/* crypto.randomUUID only exists on https or localhost, so fall back when opened by IP address */
+const uuid=()=>(window.crypto&&crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16)}));
+
+function toast(m,err){const t=$('#toast');t.textContent=m;t.className='show'+(err?' err':'');clearTimeout(toast.h);toast.h=setTimeout(()=>t.className='',2800)}
+
+/* ---------- API ---------- */
+const demoDev=[
+ {sku:'H6008',device:'DEMO:01',deviceName:'Demo bulb',capabilities:[
+  {type:'devices.capabilities.on_off',instance:'powerSwitch'},
+  {type:'devices.capabilities.range',instance:'brightness',parameters:{range:{min:1,max:100}}},
+  {type:'devices.capabilities.color_setting',instance:'colorRgb'},
+  {type:'devices.capabilities.color_setting',instance:'colorTemperatureK',parameters:{range:{min:2000,max:9000}}},
+  {type:'devices.capabilities.dynamic_scene',instance:'lightScene'},
+  {type:'devices.capabilities.toggle',instance:'gradientToggle'}]},
+ {sku:'H6199',device:'DEMO:02',deviceName:'Demo strip',capabilities:[
+  {type:'devices.capabilities.on_off',instance:'powerSwitch'},
+  {type:'devices.capabilities.range',instance:'brightness',parameters:{range:{min:1,max:100}}},
+  {type:'devices.capabilities.color_setting',instance:'colorRgb'},
+  {type:'devices.capabilities.dynamic_scene',instance:'lightScene'},
+  {type:'devices.capabilities.segment_color_setting',instance:'segmentedColorRgb',parameters:{fields:[{fieldName:'segment',size:{max:8}}]}},
+  {type:'devices.capabilities.music_setting',instance:'musicMode',parameters:{fields:[{fieldName:'musicMode',options:[{name:'Energic',value:1},{name:'Rhythm',value:2},{name:'Spectrum',value:3}]}]}}]}];
+const demoScenes=['Sunrise','Sunset','Aurora','Ocean','Candlelight','Party','Forest','Romantic'].map((n,i)=>({name:n,value:{id:i+1,paramId:i+100}}));
+
+/* ---------- server helpers + API call counter (kept by the server) ---------- */
+const post=(u,b)=>fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b||{})});
+const getCfg=async()=>{try{return await (await fetch('/api/config')).json()}catch(e){return{}}};
+const getStats=async()=>{try{return await (await fetch('/api/stats')).json()}catch(e){return null}};
+async function touch(){const st=await getStats();if(st)$('#stats').textContent='API calls today: '+st.total.toLocaleString('en-US')+'/10,000'}
+async function renderPop(){const st=await getStats();if(!st)return;
+  const rows=st.devices.map(x=>`<tr><td>${esc(x.name)}</td><td class="${x.recent>=8?'warn':''}">${x.recent} / 10</td><td>${x.today}</td></tr>`).join('');
+  $('#pop').innerHTML=`<h3>API usage today</h3>
+  <p class="mut">Cloud calls: <b style="color:var(--tx)">${st.total}</b> of about 10,000 allowed per day. Local network commands (not limited): <b style="color:var(--tx)">${st.lan}</b>.</p>
+  <table><tr><th>Light</th><th>Last minute</th><th>Today</th></tr>${rows||'<tr><td colspan="3" class="mut">No calls to a light yet.</td></tr>'}</table>
+  <p class="mut">Each light accepts about 10 cloud commands per minute. The number turns pink when a light is close to that limit. Schedules running in the background are counted too.</p>
+  <button id="rst">Reset counters</button>`;
+  $('#rst').onclick=async()=>{await post('/api/stats/reset');renderPop();touch()}}
+$('#stats').onclick=()=>{const p=$('#pop'),open=p.classList.contains('hide');p.classList.toggle('hide',!open);$('#stats').setAttribute('aria-expanded',open);if(open)renderPop()};
+setInterval(()=>{if(!$('#pop').classList.contains('hide'))renderPop();else touch()},3000);
+
+async function api(path,method='GET',body){
+  if(demo){await new Promise(r=>setTimeout(r,120));
+    if(path.endsWith('/user/devices'))return{data:demoDev};
+    if(path.endsWith('/device/scenes'))return{payload:{capabilities:[{parameters:{options:demoScenes}}]}};
+    if(path.endsWith('/diy-scenes'))return{payload:{capabilities:[{parameters:{options:[{name:'My DIY 1',value:11}]}}]}};
+    if(path.endsWith('/device/state'))return{payload:{capabilities:[{instance:'powerSwitch',state:{value:1}},{instance:'brightness',state:{value:80}}]}};
+    return{code:200,msg:'ok'};}
+  const h={};if(body)h['Content-Type']='application/json';
+  let r;try{r=await fetch('/g'+path,{method,headers:h,body:body?JSON.stringify(body):undefined})}
+  catch(e){throw new Error('Could not reach the LumaLink server. Is it still running on the PC?')}
+  const j=await r.json().catch(()=>({message:'Bad response'}));
+  if(!r.ok||(j.code&&j.code!==200))throw new Error(j.message||j.msg||('Error '+r.status));
+  return j;
+}
+
+/* command queue: spaces commands so bursts don't hit Govee's rate limit as hard */
+function send(d,type,instance,value,quiet){
+  if(d.isGroup){let n=0;d.members.filter(m=>cap(m,instance)).forEach(m=>{const v=(instance==='lightScene'&&value&&value.byDevice)?value.byDevice[m.device]:value;if(v===undefined)return;n++;send(m,type,instance,v,true)});
+    if(!quiet)toast(n?`Sent to ${d.deviceName} (${n} light${n>1?'s':''})`:'No lights in this group support that',!n);return}
+  if(demo){if(!quiet)toast('Demo: sent to '+d.deviceName);return}
+  post('/api/control',{sku:d.sku,device:d.device,type,instance,value}).then(async r=>{const j=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(j.error||('Error '+r.status));if(!quiet)toast(`Sent to ${d.deviceName} (${j.via==='lan'?'local network':'internet'})`);touch()}).catch(e=>toast(e.message,1))}
+const T='devices.capabilities.';
+const cmd={
+  power:(d,on,q)=>send(d,T+'on_off','powerSwitch',on?1:0,q),
+  bright:(d,v,q)=>send(d,T+'range','brightness',+v,q),
+  color:(d,hex,q)=>{const n=parseInt(hex.slice(1),16);send(d,T+'color_setting','colorRgb',n,q)},
+  temp:(d,v,q)=>send(d,T+'color_setting','colorTemperatureK',+v,q),
+  scene:(d,v,q)=>send(d,T+'dynamic_scene','lightScene',v,q),
+  diy:(d,v,q)=>send(d,T+'dynamic_scene','diyScene',v,q),
+  toggle:(d,inst,on,q)=>send(d,T+'toggle',inst,on?1:0,q)};
+
+/* ---------- devices ---------- */
+async function connect(){
+  key=$('#key').value.trim();
+  if(!demo&&key){await post('/api/config',{key});hasKey=true;$('#key').value=''}
+  if(!demo&&!hasKey)return toast('Enter your API key first',1);
+  try{const j=await api('/router/api/v1/user/devices');devices=normDevs(j.data||[]);renderDevs();fillCueDevs();
+    toast(devices.length?`Found ${devices.length} device(s)`:'No devices found on this account');
+    if(devices[0])select(devices[0])}
+  catch(e){toast(e.message,1)}}
+$('#connect').onclick=()=>{demo=false;connect()};
+$('#demo').onclick=()=>{demo=true;connect()};
+function renderDevs(){
+  const dv=devices.map((d,i)=>`<button class="dev ${cur&&cur.device===d.device?'sel':''}" data-i="${i}">${esc(d.deviceName||d.sku)}<small>${esc(d.sku)}</small></button>`).join('')||'<p class="mut">No devices.</p>';
+  const gv=groups.map((g,i)=>`<button class="dev ${cur&&cur.device===g.id?'sel':''}" data-g="${i}">${esc(g.name)}<small>Group · ${g.members.length} light(s)</small></button>`).join('');
+  $('#devs').innerHTML=dv+'<h3 class="mut" style="margin:12px 0 2px;font-size:13px;font-weight:500">Your groups</h3>'+gv+'<button id="newGroup">＋ New group</button>';
+  document.querySelectorAll('.dev').forEach(b=>b.onclick=()=>b.dataset.g!==undefined?select(vgroup(groups[+b.dataset.g])):select(devices[+b.dataset.i]));
+  $('#newGroup').onclick=()=>devices.length?openGroupEditor(null):toast('Connect to your lights first',1)}
+function openGroupEditor(g){tab('c');const sel=new Set(g?g.members:[]);
+  $('#control').innerHTML=`<section class="card"><h2>${g?'Edit group':'New group'}</h2><label class="f" style="margin:10px 0">Group name<input id="gName" value="${esc(g?g.name:'')}" placeholder="Living room"></label><p class="mut">Choose the lights in this group:</p><div>${devices.map(d=>`<label class="row" style="margin:6px 0"><input type="checkbox" data-m="${esc(d.device)}" ${sel.has(d.device)?'checked':''}> ${esc(d.deviceName||d.sku)} <span class="mut">${esc(d.sku)}</span></label>`).join('')}</div><div class="row" style="margin-top:12px"><button id="gSave" class="pri">Save group</button><button id="gCancel">Cancel</button></div></section>`;
+  $('#gCancel').onclick=()=>cur?select(cur):(homeCtl());
+  $('#gSave').onclick=async()=>{const name=$('#gName').value.trim(),members=[...document.querySelectorAll('[data-m]')].filter(c=>c.checked).map(c=>c.dataset.m);
+    if(!name)return toast('Give the group a name',1);if(!members.length)return toast('Pick at least one light',1);
+    let grp=g;if(g){g.name=name;g.members=members}else{grp={id:'grp_'+Date.now().toString(36),name,members};groups.push(grp)}
+    await post('/api/config',{groups});rebuildGroupScenes();fillCueDevs();select(vgroup(grp));toast('Group saved')}}
+async function delGroup(g){const used=sched.some(x=>x.dev===g.id)||list.some(t=>t.cues.some(c=>c.dev===g.id));
+  if(!confirm(`Delete the group "${g.name}"?`+(used?' It is used by a schedule or light change, which will stop working.':'')))return;
+  groups=groups.filter(x=>x.id!==g.id);delete scenes[g.id];await post('/api/config',{groups});cur=null;fillCueDevs();renderDevs();
+  homeCtl()}
+const allCard=()=>`<section class="card"><h3>Load all scenes</h3><p class="mut" id="ldAllInfo">Loads the scenes and DIY scenes for every light, so they are ready in the Control, Music sync and Schedule tabs.</p><div class="row"><button id="ldAll" class="pri">Load all scenes for all devices</button></div></section>`;
+function homeCtl(){$('#control').innerHTML=allCard()+'<p class="mut">Select a device to see its controls.</p>';$('#ldAll').onclick=loadAll}
+async function loadAll(){const b=$('#ldAll'),list=devices.filter(d=>cap(d,'lightScene')||cap(d,'diyScene')),wait=ms=>new Promise(r=>setTimeout(r,ms));
+  if(!list.length)return toast('Connect first. None of your lights support scenes yet.',1);
+  b.disabled=true;let fail=0;
+  for(let n=0;n<list.length;n++){const d=list[n];b.textContent=`Loading ${n+1} of ${list.length}…`;
+    try{if(cap(d,'lightScene'))scenes[d.device]=await sceneOpts(d,'/router/api/v1/device/scenes');
+      if(cap(d,'diyScene'))diy[d.device]=await sceneOpts(d,'/router/api/v1/device/diy-scenes')}
+    catch(e){fail++;toast((d.deviceName||d.sku)+': '+e.message,1);await wait(1500)}
+    await wait(300)}
+  fillCueValue();if(cur)select(cur);else homeCtl();
+  const total=devices.reduce((a,d)=>a+(scenes[d.device]||[]).length,0);
+  $('#ldAllInfo').textContent=`Loaded ${total} scenes for ${list.length-fail} of ${list.length} light(s).`+(fail?' Some lights failed. Try again in a minute.':'');
+  toast(fail?'Finished with some errors':'All scenes loaded',!!fail)}
+async function loadGroupScenes(d){const ms=d.members.filter(m=>cap(m,'lightScene'));if(!ms.length)return toast('No lights in this group support scenes',1);
+  let n=0;for(const m of ms){if(!scenes[m.device]){try{scenes[m.device]=await sceneOpts(m,'/router/api/v1/device/scenes')}catch(e){toast((m.deviceName||m.sku)+': '+e.message,1)}await new Promise(r=>setTimeout(r,300))}n++}
+  fillCueValue();select(vgroup(d.group));if(!scenes[d.group.id])toast('No scene is shared by all the lights in this group, or some lights failed to load.',1)}
+const cap=(d,inst)=>d.capabilities.find(c=>c.instance===inst);
+
+function select(d){cur=d;renderDevs();
+  const c=x=>cap(d,x), out=[allCard(),`<section class="card"><h2>${esc(d.deviceName||d.sku)}</h2><p class="mut">${esc(d.sku)} · ${d.capabilities.length} controls available${d.isGroup?' · Your group of '+d.members.length+' light(s)':''}</p></section>`];
+  if(d.isGroup)out.push(`<section class="card"><div class="row"><button id="gEdit">Edit group</button><button id="gDel">Delete group</button></div></section>`);
+  if(c('powerSwitch'))out.push(`<section class="card"><h3>Power</h3><div class="row"><button data-a="on">On</button><button data-a="off">Off</button></div></section>`);
+  if(c('brightness')){const r=(c('brightness').parameters||{}).range||{min:1,max:100};
+    out.push(`<section class="card"><h3>Brightness</h3><input type="range" id="br" min="${r.min}" max="${r.max}" value="${r.max}" aria-label="Brightness"></section>`)}
+  if(c('colorRgb')){const pre=['#ff0000','#ff7a00','#ffd400','#2ee66b','#00e5ff','#2f6bff','#8a2eff','#ff2ea6','#ffffff'];
+    out.push(`<section class="card"><h3>Color</h3><div class="row"><input type="color" id="col" value="#ff5c8a" aria-label="Pick color">${pre.map(p=>`<button class="sw" data-c="${p}" style="background:${p}" aria-label="Color ${p}"></button>`).join('')}</div></section>`)}
+  if(c('colorTemperatureK')){const r=(c('colorTemperatureK').parameters||{}).range||{min:2000,max:9000};
+    out.push(`<section class="card"><h3>White temperature</h3><input type="range" id="tp" min="${r.min}" max="${r.max}" value="${Math.round((r.min+r.max)/2)}" aria-label="Color temperature"><p class="mut">Warm ← → cool (${r.min}K–${r.max}K)</p></section>`)}
+  if(c('lightScene')||c('diyScene'))out.push(`<section class="card"><h3>Scenes</h3><div class="row"><button id="ldS">Load scenes</button>${d.isGroup?'':'<button id="ldD">Load my DIY scenes</button>'}<input id="sq" placeholder="Search scenes" class="hide"></div>${d.isGroup?'<p class="mut">Only scenes that every light in this group has are shown.</p>':''}<div class="scenes" id="sc"></div></section>`);
+  const tg=d.capabilities.filter(x=>x.type===T+'toggle');
+  if(tg.length)out.push(`<section class="card"><h3>Switches</h3>${tg.map(x=>`<div class="row" style="margin-bottom:6px"><span style="min-width:150px">${esc(x.instance.replace(/Toggle$/,'').replace(/([A-Z])/g,' $1'))}</span><button data-t="${x.instance}" data-v="1">On</button><button data-t="${x.instance}" data-v="0">Off</button></div>`).join('')}</section>`);
+  const sg=c('segmentedColorRgb');
+  if(sg){const n=((sg.parameters.fields||[])[0]||{size:{max:8}}).size.max;
+    out.push(`<section class="card"><h3>Segments</h3><div class="row"><input type="color" id="sgc" value="#2f6bff"><button id="sgAll">Apply to all</button></div><div class="seg">${Array.from({length:n},(_,i)=>`<button data-s="${i}">${i+1}</button>`).join('')}</div><p class="mut">Pick a color, then tap a segment.</p></section>`)}
+  const mu=c('musicMode');
+  if(mu){const o=(((mu.parameters||{}).fields||[])[0]||{}).options||[];
+    out.push(`<section class="card"><h3>Built-in music mode</h3><p class="mut">Uses the device's microphone, not your uploaded song.</p><div class="row"><select id="mm">${o.map(x=>`<option value="${x.value}">${esc(x.name)}</option>`).join('')}</select><label class="f">Sensitivity<input type="range" id="ms" min="0" max="100" value="60"></label><button id="mgo" class="pri">Start</button></div></section>`)}
+  if(!d.isGroup)out.push(`<section class="card"><button id="rf">Read current state</button> <span class="mut" id="st"></span></section>`);
+  $('#control').innerHTML=out.join('');
+  wire(d);if(scenes[d.device]&&$('#sc'))showScenes(d,'s')}
+
+/* ---------- load scenes for every light ---------- */
+const sceneOpts=async(d,path)=>{const j=await api(path,'POST',{requestId:uuid(),payload:{sku:d.sku,device:d.device}});
+  return((j.payload.capabilities[0]||{}).parameters||{}).options||[]};
+
+function wire(d){
+  const on=(s,f)=>{const e=$(s);if(e)e.onclick=f};
+  on('[data-a=on]',()=>cmd.power(d,1));on('[data-a=off]',()=>cmd.power(d,0));
+  document.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>cmd.power(d,b.dataset.a==='on'));
+  let h;const deb=(f)=>{clearTimeout(h);h=setTimeout(f,350)};
+  if($('#br'))$('#br').oninput=e=>deb(()=>cmd.bright(d,e.target.value));
+  if($('#col'))$('#col').onchange=e=>cmd.color(d,e.target.value);
+  document.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{$('#col').value=b.dataset.c;cmd.color(d,b.dataset.c)});
+  if($('#tp'))$('#tp').oninput=e=>deb(()=>cmd.temp(d,e.target.value));
+  document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>cmd.toggle(d,b.dataset.t,b.dataset.v==='1'));
+  on('#ldS',async()=>{if(d.isGroup)return loadGroupScenes(d);try{const j=await api('/router/api/v1/device/scenes','POST',{requestId:uuid(),payload:{sku:d.sku,device:d.device}});
+    scenes[d.device]=((j.payload.capabilities[0]||{}).parameters||{}).options||[];showScenes(d,'s');fillCueValue()}catch(e){toast(e.message,1)}});
+  on('#ldD',async()=>{try{const j=await api('/router/api/v1/device/diy-scenes','POST',{requestId:uuid(),payload:{sku:d.sku,device:d.device}});
+    diy[d.device]=((j.payload.capabilities[0]||{}).parameters||{}).options||[];showScenes(d,'d')}catch(e){toast(e.message,1)}});
+  if($('#sq'))$('#sq').oninput=()=>showScenes(d,$('#sc').dataset.k);
+  const segSend=(idx)=>{const n=parseInt($('#sgc').value.slice(1),16);send(d,T+'segment_color_setting','segmentedColorRgb',{segment:idx,rgb:n})};
+  document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>segSend([+b.dataset.s]));
+  on('#sgAll',()=>segSend([...document.querySelectorAll('[data-s]')].map(b=>+b.dataset.s)));
+  on('#mgo',()=>send(d,T+'music_setting','musicMode',{musicMode:+$('#mm').value,sensitivity:+$('#ms').value,autoColor:1}));
+  on('#gEdit',()=>openGroupEditor(d.group));on('#gDel',()=>delGroup(d.group));on('#ldAll',loadAll);
+  on('#rf',async()=>{try{const j=await api('/router/api/v1/device/state','POST',{requestId:uuid(),payload:{sku:d.sku,device:d.device}});
+    $('#st').textContent=(j.payload.capabilities||[]).filter(x=>x.state).map(x=>x.instance+': '+JSON.stringify(x.state.value)).join(' · ')}catch(e){toast(e.message,1)}})}
+
+function showScenes(d,k){const list=(k==='s'?scenes:diy)[d.device]||[],q=($('#sq').value||'').toLowerCase();
+  $('#sq').classList.remove('hide');const box=$('#sc');box.dataset.k=k;
+  const f=list.filter(o=>o.name.toLowerCase().includes(q));
+  box.innerHTML=f.map((o,i)=>`<button data-i="${i}">${esc(o.name)}</button>`).join('')||'<span class="mut">Nothing found.</span>';
+  box.querySelectorAll('button').forEach(b=>b.onclick=()=>(k==='s'?cmd.scene:cmd.diy)(d,f[b.dataset.i].value))}
+
+/* ---------- tabs ---------- */
+function tab(m){[['c','#control','#tabC'],['m','#music','#tabM'],['s','#sched','#tabS']].forEach(([k,p,b])=>{$(p).classList.toggle('hide',k!==m);$(b).classList.toggle('on',k===m)})}
+$('#tabC').onclick=()=>tab('c');$('#tabM').onclick=()=>tab('m');$('#tabS').onclick=()=>tab('s');
+
+/* ---------- music sync ---------- */
+const audio=$('#audio'),cv=$('#wave'),ctx=cv.getContext('2d');let peaks=null,last=0;
+async function decode(f){peaks=null;draw();
+  try{const ac=new (window.AudioContext||window.webkitAudioContext)();const buf=await ac.decodeAudioData(await f.arrayBuffer());
+    const ch=buf.getChannelData(0),n=cv.width,step=Math.floor(ch.length/n);peaks=[];
+    for(let i=0;i<n;i++){let m=0;for(let j=0;j<step;j+=40)m=Math.max(m,Math.abs(ch[i*step+j]||0));peaks.push(m)}
+    ac.close();draw()}catch(err){toast('Could not draw waveform, playback still works')}};
+function draw(){const w=cv.width,h=cv.height,dur=audio.duration||0;ctx.clearRect(0,0,w,h);
+  const cs=getComputedStyle(document.documentElement);
+  if(peaks){ctx.fillStyle=cs.getPropertyValue('--mut');peaks.forEach((p,i)=>ctx.fillRect(i,h/2-p*h/2,1,Math.max(1,p*h)))}
+  if(dur){ctx.fillStyle=cs.getPropertyValue('--ac');cues.forEach(c=>ctx.fillRect(c.t/dur*w,0,2,h));
+    ctx.fillStyle=cs.getPropertyValue('--ok');ctx.fillRect(audio.currentTime/dur*w,0,2,h)}}
+cv.onclick=e=>{if(!audio.duration)return;const r=cv.getBoundingClientRect();audio.currentTime=(e.clientX-r.left)/r.width*audio.duration;last=audio.currentTime;draw()};
+audio.onloadedmetadata=draw;audio.onseeked=()=>{last=audio.currentTime;draw()};
+function tick(){if(!audio.paused){const now=audio.currentTime;
+    if(now<last-.5)last=-.01; /* song looped back to the start */
+    cues.filter(c=>c.t>last&&c.t<=now).forEach(fire);last=now;draw()}
+  requestAnimationFrame(tick)}tick();
+
+function targets(c){if(c.dev==='all')return devices;const g=groups.find(x=>x.id===c.dev);return g?gMembers(g):devices.filter(d=>d.device===c.dev)}
+function fire(c,manual){targets(c).forEach(d=>{
+  if(c.type==='color'&&cap(d,'colorRgb'))cmd.color(d,c.val,1);
+  else if(c.type==='scene'&&cap(d,'lightScene')){const v=sv(d,c.val);if(v!==undefined)cmd.scene(d,v,1)}
+  else if(c.type==='brightness'&&cap(d,'brightness'))cmd.bright(d,c.val,1);
+  else if(c.type==='temp'&&cap(d,'colorTemperatureK'))cmd.temp(d,c.val,1);
+  else if(c.type==='power'&&cap(d,'powerSwitch'))cmd.power(d,c.val==='on',1)});
+  const el=document.querySelector(`[data-id="${c.id}"]`);if(el){el.classList.add('fired');setTimeout(()=>el.classList.remove('fired'),900)}
+  if(manual)toast('Test sent')}
+
+function fillCueDevs(){fillSDevs();$('#cD').innerHTML='<option value="all">All lights</option>'+groups.map(g=>`<option value="${esc(g.id)}">Group: ${esc(g.name)}</option>`).join('')+devices.map(d=>`<option value="${esc(d.device)}">${esc(d.deviceName||d.sku)}</option>`).join('');fillCueValue()}
+function fillCueValue(){rebuildGroupScenes();fillS();const t=$('#cType').value,dev=$('#cD').value,h=$('#cHint');h.textContent='';let html='';
+  if(t==='color')html='<input type="color" id="cv" value="#ff5c8a">';
+  if(t==='brightness')html='<input type="number" id="cv" min="1" max="100" value="80" style="width:80px">';
+  if(t==='temp')html='<input type="number" id="cv" min="2000" max="9000" step="100" value="4000" style="width:90px">';
+  if(t==='power')html='<select id="cv"><option value="on">On</option><option value="off">Off</option></select>';
+  if(t==='scene'){if(dev==='all'){html='<select id="cv" disabled><option>Pick one light</option></select>';h.textContent='Scenes belong to a specific light model. Choose a single light first.'}
+    else{const l=scenes[dev];if(!l){html='<select id="cv" disabled><option>Not loaded</option></select>';h.textContent='Open the Control tab, select this light and press "Load scenes". Then come back.'}
+      else html='<select id="cv">'+l.map((o,i)=>`<option value="${i}">${esc(o.name)}</option>`).join('')+'</select>'}}
+  $('#cVal').innerHTML=html}
+$('#cType').onchange=fillCueValue;$('#cD').onchange=fillCueValue;
+$('#useNow').onclick=()=>$('#cT').value=audio.currentTime.toFixed(1);
+let editCue=null;
+$('#addCue').onclick=()=>{const t=+$('#cT').value,type=$('#cType').value,dev=$('#cD').value,v=$('#cv'),old=editCue?cues.find(c=>c.id===editCue):null;
+  if(ti<0)return toast('Add a song first',1);if(!devices.length)return toast('Connect first',1);
+  let val,label;
+  if(type==='scene'&&v.disabled&&old&&old.type==='scene'&&old.dev===dev){val=old.val;label=old.label} /* scenes not loaded: keep the current scene */
+  else{if(v.disabled)return toast('Choose a value first',1);
+    val=v.value;label=val;
+    if(type==='scene'){const o=scenes[dev][+val];val=o.value;label=o.name}
+    if(type==='brightness')label=val+'%';if(type==='temp')label=val+'K'}
+  if(old){Object.assign(old,{t,type,dev,val,label});toast('Light change updated')}
+  else cues.push({id:Date.now()+Math.random(),t,type,dev,val,label});
+  endEdit();save()};
+function endEdit(){editCue=null;$('#addCue').textContent='Add';$('#cCancel').classList.add('hide')}
+$('#cCancel').onclick=endEdit;
+function startEdit(c){editCue=c.id;$('#cT').value=c.t;$('#cD').value=c.dev;$('#cType').value=c.type;fillCueValue();const v=$('#cv');
+  if(c.type==='scene'){const l=scenes[c.dev]||[],i=l.findIndex(o=>JSON.stringify(o.value)===JSON.stringify(c.val));
+    if(i>=0)v.value=i;else if(!v.disabled)$('#cHint').textContent='This scene is not in the loaded list. Pick another, or cancel to keep it.'}
+  else if(v)v.value=c.val;
+  $('#addCue').textContent='Update';$('#cCancel').classList.remove('hide');$('#cT').scrollIntoView({behavior:'smooth',block:'center'})}
+function save(){cues.sort((a,b)=>a.t-b.t);if(ti>=0){list[ti].cues=cues;cueStore[list[ti].key]=cues;localStorage.goveeCues=JSON.stringify(cueStore)}renderCues();renderList();draw()}
+const fmt=s=>Math.floor(s/60)+':'+(s%60).toFixed(1).padStart(4,'0');
+function renderCues(){const nm=id=>id==='all'?'All lights':(gName(id)||(devices.find(d=>d.device===id)||{}).deviceName||id);
+  $('#cues').innerHTML=cues.map((c,i)=>`<div class="cue" data-id="${c.id}"><b>${fmt(c.t)}</b><span>${esc(nm(c.dev))}: ${c.type} ${c.type==='color'?`<span class="sw" style="display:inline-block;width:14px;height:14px;vertical-align:middle;background:${c.val}"></span>`:''} ${esc(c.label)}</span><span class="row"><button data-j="${i}" data-x="seek">Jump</button><button data-j="${i}" data-x="test">Test</button><button data-j="${i}" data-x="edit">Edit</button><button data-j="${i}" data-x="del" aria-label="Delete">✕</button></span></div>`).join('')||'<p class="mut">No changes yet. Add one above.</p>';
+  document.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{const c=cues[b.dataset.j],x=b.dataset.x;
+    if(x==='del'){if(editCue===c.id)endEdit();cues.splice(b.dataset.j,1);save()}else if(x==='test')fire(c,1);else if(x==='edit')startEdit(c);else{audio.currentTime=Math.max(0,c.t-.05);last=audio.currentTime}})}
+$('#clr').onclick=()=>{if(cues.length&&confirm('Remove all timeline entries?')){cues=[];save()}};
+const fileName=()=>(($('#exName').value||'').replace(/\.json$/i,'').replace(/[\\/:*?"<>|]/g,'').trim()||'light-timeline')+'.json';
+$('#expo').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(cues,null,1)],{type:'application/json'}));a.download=fileName();a.click()};
+$('#impo').onchange=async e=>{try{cues=JSON.parse(await e.target.files[0].text());save();toast('Timeline imported')}catch(x){toast('Not a valid timeline file',1)}};
+/* ---------- playlist ---------- */
+let list=[],ti=-1;
+$('#rep').value=localStorage.goveeRep||'all';
+$('#rep').onchange=()=>{audio.loop=$('#rep').value==='one';localStorage.goveeRep=$('#rep').value};
+$('#file').onchange=e=>{[...e.target.files].forEach(f=>{const k=f.name+'|'+f.size;
+  list.push({id:Date.now()+Math.random(),name:f.name,file:f,url:URL.createObjectURL(f),key:k,cues:cueStore[k]||[]})});
+  e.target.value='';renderList();if(ti<0&&list.length)load(0,false)};
+function load(i,play){const t=list[i];if(!t)return;ti=i;audio.src=t.url;audio.loop=$('#rep').value==='one';
+  endEdit();cues=t.cues;last=-.01;$('#tname').textContent=t.name;$('#exName').value=t.name.replace(/\.[^.]+$/,'')+' lights';decode(t.file);renderList();renderCues();draw();
+  if(play)audio.play().catch(()=>{})}
+function step(d,auto){if(!list.length)return;let n=ti+d;
+  if(n>=list.length){if($('#rep').value==='all'||!auto)n=0;else return}
+  if(n<0)n=list.length-1;load(n,true)}
+audio.onended=()=>step(1,true);
+$('#restart').onclick=()=>{if(ti<0)return toast('Add a song first',1);audio.currentTime=0;last=-.01;audio.play().catch(()=>{});draw()};
+$('#rewind').onclick=()=>{if(ti<0)return toast('Add a song first',1);audio.pause();audio.currentTime=0;last=-.01;draw()};
+$('#next').onclick=()=>step(1);$('#prev').onclick=()=>step(-1);
+function renderList(){$('#plist').innerHTML=list.map((t,i)=>`<div class="cue" style="grid-template-columns:28px 1fr auto;${i===ti?'border-color:var(--ac)':''}"><span class="mut">${i===ti?'▶':i+1}</span><button data-p="${i}" data-y="play" style="text-align:left;border:0;background:none;padding:0">${esc(t.name)} <small class="mut">(${t.cues.length} light changes)</small></button><span class="row"><button data-p="${i}" data-y="up" aria-label="Move up">↑</button><button data-p="${i}" data-y="dn" aria-label="Move down">↓</button><button data-p="${i}" data-y="rm" aria-label="Remove song">✕</button></span></div>`).join('');
+  document.querySelectorAll('[data-y]').forEach(b=>b.onclick=()=>{const i=+b.dataset.p,y=b.dataset.y,curId=ti>=0?list[ti].id:null;
+    if(y==='play')return load(i,true);
+    if(y==='up'||y==='dn'){const j=y==='up'?i-1:i+1;if(j<0||j>=list.length)return;[list[i],list[j]]=[list[j],list[i]];ti=list.findIndex(t=>t.id===curId);return renderList()}
+    const gone=list.splice(i,1)[0];URL.revokeObjectURL(gone.url);
+    if(i===ti){audio.pause();if(list.length)load(Math.min(i,list.length-1),false);
+      else{ti=-1;audio.removeAttribute('src');audio.load();cues=[];peaks=null;$('#tname').textContent='(no song yet)';renderCues();draw()}}
+    else ti=list.findIndex(t=>t.id===curId);
+    renderList()})}
+renderList();
+$('#cfgBtn').onclick=async()=>{$('#cfg').classList.toggle('hide');$('#lanOn').checked=!!(await getCfg()).lan};
+$('#scanLan').onclick=async()=>{$('#lanInfo').textContent='Searching… this takes about 7 seconds';
+  try{const l=await (await fetch('/api/lan/scan')).json();$('#lanInfo').textContent=l.length?`Found ${l.length} light(s): `+l.map(x=>x.sku+' ('+x.ip+')').join(', '):'No lights found. Turn on LAN Control for each light in the Govee Home app and allow Node.js through Windows Firewall (private networks).'}
+  catch(e){$('#lanInfo').textContent='Search failed.'}};
+$('#saveCfg').onclick=async()=>{await post('/api/config',{lan:$('#lanOn').checked});$('#cfg').classList.add('hide');toast('Settings saved')};
+/* ---------- schedules ---------- */
+let sched=[],sSteps=[],editId=null,sRun={};
+const DN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+$('#sDays').innerHTML='<span class="mut">Days:</span>'+DN.map((n,i)=>`<label class="row"><input type="checkbox" data-day="${i}" checked> ${n}</label>`).join('');
+const devName=id=>id==='all'?'All lights':(gName(id)||(devices.find(d=>d.device===id)||{}).deviceName||id);
+const swatch=v=>`<span class="sw" style="display:inline-block;width:14px;height:14px;vertical-align:middle;background:${v}"></span>`;
+function fillSDevs(){$('#sD').innerHTML='<option value="all">All lights</option>'+groups.map(g=>`<option value="${esc(g.id)}">Group: ${esc(g.name)}</option>`).join('')+devices.map(d=>`<option value="${esc(d.device)}">${esc(d.deviceName||d.sku)}</option>`).join('')}
+function valUI(t,dev,id){let html='',hint='';
+  if(t==='color')html=`<input type="color" id="${id}" value="#ff5c8a">`;
+  if(t==='brightness')html=`<input type="number" id="${id}" min="1" max="100" value="80" style="width:80px">`;
+  if(t==='temp')html=`<input type="number" id="${id}" min="2000" max="9000" step="100" value="4000" style="width:90px">`;
+  if(t==='power')html=`<select id="${id}"><option value="on">On</option><option value="off">Off</option></select>`;
+  if(t==='scene'){if(dev==='all'){html=`<select id="${id}" disabled><option>Pick one light</option></select>`;hint='Scenes belong to a specific light model. Choose a single light first.'}
+    else if(!scenes[dev]){html=`<select id="${id}" disabled><option>Not loaded</option></select>`;hint='Open the Control tab, select the light or group and press "Load scenes", then come back.'}
+    else html=`<select id="${id}">`+scenes[dev].map((o,i)=>`<option value="${i}">${esc(o.name)}</option>`).join('')+'</select>'}
+  return{html,hint}}
+function fillS(){const r=valUI($('#sType').value,$('#sD').value,'sv');$('#sVal').innerHTML=r.html;$('#sHint').textContent=r.hint;
+  $('#sHelp').textContent=$('#sM').value==='at'?'At the set time every step runs in order, with the delay you choose between them.':'Each repeat runs the next step in the list, then loops back to the first one.'}
+function modeUI(){const m=$('#sM').value;$('#sAt').classList.toggle('hide',m==='every');$('#sEv').classList.toggle('hide',m!=='every');$('#sShow').classList.toggle('hide',m!=='show');
+  ['#sStepBox','#sDL','#sGL','#sAEL'].forEach(i=>$(i).classList.toggle('hide',m==='show'));fillS()}
+$('#sM').onchange=modeUI;$('#sType').onchange=fillS;$('#sD').onchange=fillS;
+$('#sAdd').onclick=()=>{const t=$('#sType').value,v=$('#sv');if(!v||v.disabled)return toast('Choose a value first',1);
+  let val=v.value,label=val;if(t==='scene'){const o=scenes[$('#sD').value][+val];val=o.value;label=o.name}
+  if(t==='brightness')label+='%';if(t==='temp')label+='K';sSteps.push({type:t,val,label});renderSteps()};
+function renderSteps(){$('#sSteps').innerHTML=sSteps.map((x,i)=>`<div class="cue" style="grid-template-columns:30px 1fr auto"><b>${i+1}</b><span>${x.type} ${x.type==='color'?swatch(x.val):''} ${esc(x.label)}</span><button data-r="${i}" aria-label="Remove step">✕</button></div>`).join('')||'<p class="mut">No steps yet. Add a color or scene above.</p>';
+  document.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{sSteps.splice(+b.dataset.r,1);renderSteps()})}
+function resetForm(){editId=null;sSteps=[];$('#sDF').value='';$('#sDU').value='';$('#sEnd').value='';$('#sAtEnd').value='';$('#sOffEnd').checked=false;$('#sLoop').checked=false;$('#sN').value='';$('#sM').value='at';$('#sTitle').textContent='New schedule';$('#sSave').textContent='Save schedule';$('#sCancel').classList.add('hide');
+  document.querySelectorAll('[data-day]').forEach(c=>c.checked=true);renderSteps();modeUI()}
+$('#sCancel').onclick=resetForm;
+$('#sSave').onclick=()=>{const md=$('#sM').value;if(md==='show'){if(!$('#sS').value)return toast('Save a show first, then choose it here',1);if($('#sLoop').checked&&!$('#sEnd').value)return toast('Pick an end time to repeat until',1)}else if(!sSteps.length)return toast('Add at least one step',1);
+  const days=[...document.querySelectorAll('[data-day]')].filter(c=>c.checked).map(c=>+c.dataset.day);if(!days.length)return toast('Pick at least one day',1);
+  const o={id:editId||Date.now(),name:$('#sN').value.trim()||'Schedule',on:true,mode:$('#sM').value,time:$('#sT').value,gap:Math.max(0,+$('#sG').value||0),every:Math.max(1,+$('#sI').value||1),from:$('#sF').value,to:$('#sU').value,dev:md==='show'?'all':$('#sD').value,days,steps:md==='show'?[]:sSteps.slice(),show:$('#sS').value,dFrom:$('#sDF').value,dTo:$('#sDU').value,end:md==='show'?$('#sEnd').value:(md==='at'?$('#sAtEnd').value:''),offAtEnd:md==='every'&&$('#sOffEnd').checked,loop:md==='show'&&$('#sLoop').checked};
+  const i=sched.findIndex(x=>x.id===o.id);if(i>=0){o.on=sched[i].on;sched[i]=o}else sched.push(o);
+  delete sRun[o.id];persist();resetForm();toast('Schedule saved')};
+async function persist(){renderSched();await post('/api/config',{schedules:sched})}
+const showName=id=>(shows.find(x=>x.id===id)||{}).name||'(missing show)';
+const dateText=sc=>sc.dFrom||sc.dTo?(sc.dFrom===sc.dTo?' · on '+sc.dFrom:' · '+(sc.dFrom?'from '+sc.dFrom:'')+(sc.dTo?' until '+sc.dTo:'')):'';
+const dayText=d=>d.length===7?'Every day':(d.join()==='1,2,3,4,5'?'Weekdays':(d.join()==='0,6'?'Weekends':d.map(i=>DN[i]).join(', ')));
+const hm=t=>t?new Date(t).toLocaleTimeString([],{hour:'numeric',minute:'2-digit',second:'2-digit'}):'not yet';
+function renderSched(){$('#sList').innerHTML=sched.map((sc,i)=>`<div class="cue" style="grid-template-columns:1fr auto;align-items:start"><div><b>${esc(sc.name)}</b> <span class="mut">${sc.mode==='show'?'':'· '+devName(sc.dev)}</span><div class="mut">${dayText(sc.days)}${dateText(sc)} · ${sc.mode==='every'?'every '+sc.every+' min, '+sc.from+' to '+sc.to+(sc.offAtEnd?', then lights off':''):(sc.mode==='show'?'plays at ':'at ')+sc.time+(sc.mode==='show'&&sc.end?' until '+sc.end+(sc.loop?' (repeating)':''):'')+(sc.mode==='at'&&sc.end?', lights off at '+sc.end:'')}</div><div>${sc.mode==='show'?'🎵 '+esc(showName(sc.show)):sc.steps.map(x=>x.type==='color'?swatch(x.val)+' color':esc(x.type+': '+x.label)).join(' → ')}</div><div class="mut">Last run: ${hm((sRun[sc.id]||{}).last)}</div></div><span class="row"><button data-q="${i}" data-z="on" class="${sc.on?'on':''}">${sc.on?'On':'Off'}</button><button data-q="${i}" data-z="run">Run now</button><button data-q="${i}" data-z="edit">Edit</button><button data-q="${i}" data-z="del" aria-label="Delete">✕</button></span></div>`).join('')||'<p class="mut">No schedules yet.</p>';
+  document.querySelectorAll('[data-z]').forEach(b=>b.onclick=()=>{const sc=sched[+b.dataset.q],z=b.dataset.z;
+    if(z==='on'){sc.on=!sc.on;delete sRun[sc.id];persist()}
+    else if(z==='run'){post('/api/schedules/run',{id:sc.id});toast('Running '+sc.name);setTimeout(loadSched,1500)}
+    else if(z==='del'){if(confirm('Delete "'+sc.name+'"?')){sched.splice(+b.dataset.q,1);persist()}}
+    else{editId=sc.id;sSteps=sc.steps.slice();$('#sN').value=sc.name;$('#sS').value=sc.show||'';$('#sEnd').value=sc.mode==='show'?(sc.end||''):'';$('#sAtEnd').value=sc.mode==='at'?(sc.end||''):'';$('#sOffEnd').checked=!!sc.offAtEnd;$('#sLoop').checked=!!sc.loop;$('#sDF').value=sc.dFrom||'';$('#sDU').value=sc.dTo||'';$('#sD').value=sc.dev;$('#sM').value=sc.mode;$('#sT').value=sc.time;$('#sG').value=sc.gap;$('#sI').value=sc.every;$('#sF').value=sc.from;$('#sU').value=sc.to;
+      document.querySelectorAll('[data-day]').forEach(c=>c.checked=sc.days.includes(+c.dataset.day));
+      $('#sTitle').textContent='Edit schedule';$('#sSave').textContent='Update schedule';$('#sCancel').classList.remove('hide');renderSteps();modeUI();scrollTo({top:0,behavior:'smooth'})}})}
+function fillSShows(){const v=$('#sS').value;$('#sS').innerHTML=shows.map(x=>`<option value="${esc(x.id)}">${esc(x.name)}</option>`).join('')||'<option value="">No shows saved yet</option>';if(shows.some(x=>x.id===v))$('#sS').value=v}
+function renderShows(){
+  $('#showNow').innerHTML=playing?`<div class="cue" style="grid-template-columns:1fr auto;border-color:var(--ok)"><span>▶ Now playing: <b>${esc(playing.name)}</b></span><button id="stopShow">Stop</button></div>`:'';
+  $('#showList').innerHTML=shows.map((x,i)=>`<div class="cue" style="grid-template-columns:1fr auto"><span><b>${esc(x.name)}</b> <small class="mut">${esc(x.file)} · ${x.cues.length} light changes</small></span><span class="row"><button data-w="${i}" data-v="play">Play now</button><button data-w="${i}" data-v="del" aria-label="Delete show">✕</button></span></div>`).join('')||'<p class="mut">No shows saved yet.</p>';
+  if($('#stopShow'))$('#stopShow').onclick=async()=>{await post('/api/shows/stop');setTimeout(loadSched,800)};
+  document.querySelectorAll('[data-v]').forEach(b=>b.onclick=async()=>{const x=shows[+b.dataset.w];
+    if(b.dataset.v==='play'){await post('/api/shows/play',{id:x.id});toast('Starting '+x.name);setTimeout(loadSched,1500)}
+    else if(confirm(`Delete the show "${x.name}"?`+(sched.some(s=>s.show===x.id)?' A schedule uses it and will stop working.':''))){shows.splice(+b.dataset.w,1);await post('/api/config',{shows});renderShows();fillSShows()}})}
+$('#saveShow').onclick=async()=>{if(ti<0)return toast('Add a song first',1);if(!cues.length)return toast('Add some light changes first',1);
+  const t=list[ti],name=($('#exName').value||t.name).trim();toast('Uploading song…');
+  try{const r=await fetch('/api/songs/'+encodeURIComponent(t.file.name),{method:'PUT',body:t.file});if(!r.ok)throw new Error('Upload to the server failed');
+    const{file}=await r.json(),i=shows.findIndex(x=>x.name===name),sh={id:i>=0?shows[i].id:'show_'+Date.now().toString(36),name,file,cues:JSON.parse(JSON.stringify(cues))};
+    if(i>=0)shows[i]=sh;else shows.push(sh);await post('/api/config',{shows});renderShows();fillSShows();toast(`Saved "${name}". Schedule it on the Schedule tab.`)}
+  catch(e){toast(e.message,1)}};
+async function loadSched(){const c=await getCfg();if(c.schedules){sched=c.schedules;sRun=c.runs||{};shows=c.shows||[];playing=c.playing||null;fillSShows();renderShows();if(!editId)renderSched()}}
+setInterval(()=>{if(!$('#sched').classList.contains('hide'))loadSched()},5000);
+/* ---------- export / import schedules ---------- */
+$('#expSched').onclick=()=>{const data={type:'lumalink-schedules',version:1,schedules:sched,shows:shows.map(({id,name,file,cues})=>({id,name,file,cues}))};
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,1)],{type:'application/json'}));
+  a.download=(($('#exSched').value||'').replace(/\.json$/i,'').replace(/[\\/:*?"<>|]/g,'').trim()||'lumalink-schedules')+'.json';a.click()};
+$('#impSched').onclick=()=>$('#impSchedF').click();
+$('#impSchedF').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{const d=JSON.parse(await f.text());if(!d||!Array.isArray(d.schedules))throw new Error('x');
+    const idMap={};let newShows=0,k=0;
+    (d.shows||[]).forEach(x=>{const ex=shows.find(y=>y.name===x.name);
+      if(ex)idMap[x.id]=ex.id;else{const id='show_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);idMap[x.id]=id;shows.push({id,name:x.name,file:x.file,cues:x.cues||[]});newShows++}});
+    d.schedules.forEach(s=>sched.push({...s,id:Date.now()+(k++),show:s.mode==='show'?(idMap[s.show]||s.show):s.show}));
+    await post('/api/config',{shows,schedules:sched});renderShows();fillSShows();renderSched();
+    toast(`Imported ${d.schedules.length} schedule(s)`+(newShows?`. ${newShows} new show(s) have no song file, so they run lights only until you re-save them from the Music sync tab.`:''))}
+  catch(x){toast('That is not a valid schedule file',1)}};
+resetForm();loadSched();homeCtl();
+(async()=>{const c=await getCfg();groups=c.groups||[];if(c.hasKey){hasKey=true;connect()}else{renderDevs();fillCueDevs()}})();
+renderCues();fillCueDevs();touch();
+</script>
+</body>
+</html>
