@@ -107,6 +107,7 @@ function stepCmd(st) {
   switch (st.type) {
     case 'color': return [T + 'color_setting', 'colorRgb', parseInt(String(st.val).slice(1), 16)];
     case 'scene': return [T + 'dynamic_scene', 'lightScene', st.val];
+    case 'diy': return [T + 'dynamic_scene', 'diyScene', st.val];
     case 'brightness': return [T + 'range', 'brightness', +st.val];
     case 'temp': return [T + 'color_setting', 'colorTemperatureK', +st.val];
     case 'power': return [T + 'on_off', 'powerSwitch', st.val === 'on' ? 1 : 0];
@@ -123,8 +124,15 @@ function fireCue(c) { // one light change: color, scene, brightness, temp or pow
     control(d, ...cmd).catch(e => log(`Light change failed on ${d.deviceName}:`, e.message));
   });
 }
+const schedTimers = {}; // pending steps per schedule, so they can be cancelled when it is turned off
 function runSteps(sc, idx) {
-  idx.forEach((si, k) => setTimeout(() => fireCue({ dev: sc.dev, type: sc.steps[si].type, val: sc.steps[si].val }), k * (sc.gap || 0) * 1000));
+  const list = schedTimers[sc.id] || (schedTimers[sc.id] = []);
+  idx.forEach((si, k) => list.push(setTimeout(() => fireCue({ dev: sc.dev, type: sc.steps[si].type, val: sc.steps[si].val }), k * (sc.gap || 0) * 1000)));
+}
+function cancelSchedule(sc, why) { // used when a schedule is turned off or deleted: nothing of it may keep running
+  (schedTimers[sc.id] || []).forEach(clearTimeout); delete schedTimers[sc.id];
+  delete runs[sc.id];
+  if (showRun && showRun.by === sc.id) { log(`Schedule ${why}, stopping its show:`, sc.name); stopShow(); }
 }
 const runSchedule = sc => { if (sc.mode === 'show') { playShow(sc.show, sc.id, !!sc.loop); setStop(sc); } else { runSteps(sc, sc.steps.map((_, k) => k)); setStop(sc); } };
 function nextAt(hhmm) { // the next time the clock shows hh:mm (tomorrow if it has already passed today)
@@ -162,7 +170,8 @@ function finishShow(run, sh) {
   if (showRun !== run) return;
   run.timers.forEach(clearTimeout); showRun = null;
   const stopAt = run.by && (runs[run.by] || {}).stopAt;
-  if (run.loop && stopAt && Date.now() < stopAt - 1000) { log('Repeating show until the end time:', sh.name); playShow(sh.id, run.by, true); }
+  const owner = (cfg.schedules || []).find(x => x.id === run.by);
+  if (run.loop && stopAt && owner && owner.on && Date.now() < stopAt - 1000) { log('Repeating show until the end time:', sh.name); playShow(sh.id, run.by, true); }
   else log('Show finished:', sh.name);
 }
 function playShow(id, by, loop) {
@@ -191,6 +200,7 @@ const mins = t => { const p = String(t || '0:0').split(':'); return +p[0] * 60 +
 function tick() {
   for (const sc of cfg.schedules) { // end times: stop a show that this schedule started
     const r = runs[sc.id];
+    if (!sc.on) continue;
     if (r && r.offAt && Date.now() >= r.offAt) { r.offAt = 0; log('End time reached, turning the lights off:', sc.name); fireCue({ dev: sc.dev, type: 'power', val: 'off' }); }
     if (r && r.stopAt && Date.now() >= r.stopAt) { r.stopAt = 0; if (showRun && showRun.by === sc.id) { log('End time reached:', sc.name); stopShow(); } }
   }
@@ -255,7 +265,10 @@ http.createServer(async (req, res) => {
       }
       if (Array.isArray(b.schedules)) {
         const old = Object.fromEntries(cfg.schedules.map(s => [s.id, JSON.stringify(s)]));
-        cfg.schedules = b.schedules; log(`Schedules saved (${b.schedules.length} total, ${b.schedules.filter(s => s.on).length} on)`); cfg.schedules.forEach(s => { if (old[s.id] !== JSON.stringify(s)) delete runs[s.id]; });
+        const before = cfg.schedules;
+        cfg.schedules = b.schedules;
+        before.forEach(o => { const nw = b.schedules.find(x => x.id === o.id); if (!nw) cancelSchedule(o, 'deleted'); else if (o.on && !nw.on) { log('Schedule turned off:', o.name); cancelSchedule(o, 'turned off'); } });
+        log(`Schedules saved (${b.schedules.length} total, ${b.schedules.filter(s => s.on).length} on)`); cfg.schedules.forEach(s => { if (old[s.id] !== JSON.stringify(s)) delete runs[s.id]; });
       }
       save(); return json(res, 200, { ok: true });
     }

@@ -460,9 +460,13 @@ function valUI(t,dev,id){let html='',hint='';
   if(t==='brightness')html=`<input type="number" id="${id}" min="1" max="100" value="80" style="width:80px">`;
   if(t==='temp')html=`<input type="number" id="${id}" min="2000" max="9000" step="100" value="4000" style="width:90px">`;
   if(t==='power')html=`<select id="${id}"><option value="on">On</option><option value="off">Off</option></select>`;
-  if(t==='scene'){if(dev==='all'){html=`<select id="${id}" disabled><option>Pick one light</option></select>`;hint='Scenes belong to a specific light model. Choose a single light first.'}
-    else if(!scenes[dev]){html=`<select id="${id}" disabled><option>Not loaded</option></select>`;hint='Open the Control tab, select the light or group and press "Load scenes", then come back.'}
-    else html=`<select id="${id}">`+scenes[dev].map((o,i)=>`<option value="${i}">${esc(o.name)}</option>`).join('')+'</select>'}
+  if(t==='scene'){const sl=scenes[dev]||[],dl=diy[dev]||[];
+    if(dev==='all'){html=`<select id="${id}" disabled><option>Pick one light</option></select>`;hint='Scenes belong to a specific light model. Choose a single light first.'}
+    else if(!sl.length&&!dl.length){html=`<select id="${id}" disabled><option>Not loaded</option></select>`;hint='Open the Control tab, select the light or group and press "Load scenes", then come back.'}
+    else{html=`<select id="${id}">`
+      +(sl.length?'<optgroup label="Scenes">'+sl.map((o,i)=>`<option value="s:${i}">${esc(o.name)}</option>`).join('')+'</optgroup>':'')
+      +(dl.length?'<optgroup label="My DIY scenes">'+dl.map((o,i)=>`<option value="d:${i}">${esc(o.name)}</option>`).join('')+'</optgroup>':'')+'</select>';
+      const dv=devices.find(x=>x.device===dev);if(dv&&cap(dv,'diyScene')&&!diy[dev])hint='To list DIY scenes for this light here, press "Load my DIY scenes" for it in the Control tab.'}}
   return{html,hint}}
 function fillS(){const r=valUI($('#sType').value,$('#sD').value,'sv');$('#sVal').innerHTML=r.html;$('#sHint').textContent=r.hint;
   $('#sHelp').textContent=$('#sM').value==='at'?'At the set time every step runs in order, with the delay you choose between them.':'Each repeat runs the next step in the list, then loops back to the first one.'}
@@ -470,9 +474,10 @@ function modeUI(){const m=$('#sM').value;$('#sAt').classList.toggle('hide',m==='
   ['#sStepBox','#sDL','#sGL','#sAEL'].forEach(i=>$(i).classList.toggle('hide',m==='show'));fillS()}
 $('#sM').onchange=modeUI;$('#sType').onchange=fillS;$('#sD').onchange=fillS;
 $('#sAdd').onclick=()=>{const t=$('#sType').value,v=$('#sv');if(!v||v.disabled)return toast('Choose a value first',1);
-  let val=v.value,label=val;if(t==='scene'){const o=scenes[$('#sD').value][+val];val=o.value;label=o.name}
-  if(t==='brightness')label+='%';if(t==='temp')label+='K';sSteps.push({type:t,val,label});renderSteps()};
-function renderSteps(){$('#sSteps').innerHTML=sSteps.map((x,i)=>`<div class="cue" style="grid-template-columns:30px 1fr auto"><b>${i+1}</b><span>${x.type} ${x.type==='color'?swatch(x.val):''} ${esc(x.label)}</span><button data-r="${i}" aria-label="Remove step">✕</button></div>`).join('')||'<p class="mut">No steps yet. Add a color or scene above.</p>';
+  let val=v.value,label=val,type=t;
+  if(t==='scene'){const[k,i]=val.split(':'),o=(k==='d'?diy:scenes)[$('#sD').value][+i];val=o.value;label=o.name;if(k==='d')type='diy'}
+  if(t==='brightness')label+='%';if(t==='temp')label+='K';sSteps.push({type,val,label});renderSteps()};
+function renderSteps(){$('#sSteps').innerHTML=sSteps.map((x,i)=>`<div class="cue" style="grid-template-columns:30px 1fr auto"><b>${i+1}</b><span>${x.type==='diy'?'DIY scene':x.type} ${x.type==='color'?swatch(x.val):''} ${esc(x.label)}</span><button data-r="${i}" aria-label="Remove step">✕</button></div>`).join('')||'<p class="mut">No steps yet. Add a color or scene above.</p>';
   document.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{sSteps.splice(+b.dataset.r,1);renderSteps()})}
 function resetForm(){editId=null;sSteps=[];$('#sDF').value='';$('#sDU').value='';$('#sEnd').value='';$('#sAtEnd').value='';$('#sOffEnd').checked=false;$('#sLoop').checked=false;$('#sN').value='';$('#sM').value='at';$('#sTitle').textContent='New schedule';$('#sSave').textContent='Save schedule';$('#sCancel').classList.add('hide');
   document.querySelectorAll('[data-day]').forEach(c=>c.checked=true);renderSteps();modeUI()}
@@ -482,12 +487,13 @@ $('#sSave').onclick=()=>{const md=$('#sM').value;if(md==='show'){if(!$('#sS').va
   const o={id:editId||Date.now(),name:$('#sN').value.trim()||'Schedule',on:true,mode:$('#sM').value,time:$('#sT').value,gap:Math.max(0,+$('#sG').value||0),every:Math.max(1,+$('#sI').value||1),from:$('#sF').value,to:$('#sU').value,dev:md==='show'?'all':$('#sD').value,days,steps:md==='show'?[]:sSteps.slice(),show:$('#sS').value,dFrom:$('#sDF').value,dTo:$('#sDU').value,end:md==='show'?$('#sEnd').value:(md==='at'?$('#sAtEnd').value:''),offAtEnd:md==='every'&&$('#sOffEnd').checked,loop:md==='show'&&$('#sLoop').checked};
   const i=sched.findIndex(x=>x.id===o.id);if(i>=0){o.on=sched[i].on;sched[i]=o}else sched.push(o);
   delete sRun[o.id];persist();resetForm();toast('Schedule saved')};
-async function persist(){renderSched();await post('/api/config',{schedules:sched})}
+let schedBusy=0;
+async function persist(){schedBusy++;renderSched();try{await post('/api/config',{schedules:sched})}finally{setTimeout(()=>schedBusy--,1500)}}
 const showName=id=>(shows.find(x=>x.id===id)||{}).name||'(missing show)';
 const dateText=sc=>sc.dFrom||sc.dTo?(sc.dFrom===sc.dTo?' · on '+sc.dFrom:' · '+(sc.dFrom?'from '+sc.dFrom:'')+(sc.dTo?' until '+sc.dTo:'')):'';
 const dayText=d=>d.length===7?'Every day':(d.join()==='1,2,3,4,5'?'Weekdays':(d.join()==='0,6'?'Weekends':d.map(i=>DN[i]).join(', ')));
 const hm=t=>t?new Date(t).toLocaleTimeString([],{hour:'numeric',minute:'2-digit',second:'2-digit'}):'not yet';
-function renderSched(){$('#sList').innerHTML=sched.map((sc,i)=>`<div class="cue" style="grid-template-columns:1fr auto;align-items:start"><div><b>${esc(sc.name)}</b> <span class="mut">${sc.mode==='show'?'':'· '+devName(sc.dev)}</span><div class="mut">${dayText(sc.days)}${dateText(sc)} · ${sc.mode==='every'?'every '+sc.every+' min, '+sc.from+' to '+sc.to+(sc.offAtEnd?', then lights off':''):(sc.mode==='show'?'plays at ':'at ')+sc.time+(sc.mode==='show'&&sc.end?' until '+sc.end+(sc.loop?' (repeating)':''):'')+(sc.mode==='at'&&sc.end?', lights off at '+sc.end:'')}</div><div>${sc.mode==='show'?'🎵 '+esc(showName(sc.show)):sc.steps.map(x=>x.type==='color'?swatch(x.val)+' color':esc(x.type+': '+x.label)).join(' → ')}</div><div class="mut">Last run: ${hm((sRun[sc.id]||{}).last)}</div></div><span class="row"><button data-q="${i}" data-z="on" class="${sc.on?'on':''}">${sc.on?'On':'Off'}</button><button data-q="${i}" data-z="run">Run now</button><button data-q="${i}" data-z="edit">Edit</button><button data-q="${i}" data-z="del" aria-label="Delete">✕</button></span></div>`).join('')||'<p class="mut">No schedules yet.</p>';
+function renderSched(){$('#sList').innerHTML=sched.map((sc,i)=>`<div class="cue" style="grid-template-columns:1fr auto;align-items:start${sc.on?'':';opacity:.55'}"><div><b>${esc(sc.name)}</b>${sc.on?'':' <span class="mut">(disabled, will not run)</span>'} <span class="mut">${sc.mode==='show'?'':'· '+devName(sc.dev)}</span><div class="mut">${dayText(sc.days)}${dateText(sc)} · ${sc.mode==='every'?'every '+sc.every+' min, '+sc.from+' to '+sc.to+(sc.offAtEnd?', then lights off':''):(sc.mode==='show'?'plays at ':'at ')+sc.time+(sc.mode==='show'&&sc.end?' until '+sc.end+(sc.loop?' (repeating)':''):'')+(sc.mode==='at'&&sc.end?', lights off at '+sc.end:'')}</div><div>${sc.mode==='show'?'🎵 '+esc(showName(sc.show)):sc.steps.map(x=>x.type==='color'?swatch(x.val)+' color':esc((x.type==='diy'?'DIY scene':x.type)+': '+x.label)).join(' → ')}</div><div class="mut">Last run: ${hm((sRun[sc.id]||{}).last)}</div></div><span class="row"><button data-q="${i}" data-z="on" class="${sc.on?'on':''}" title="Click to ${sc.on?'disable':'enable'} this schedule">${sc.on?'Enabled':'Disabled'}</button><button data-q="${i}" data-z="run">Run now</button><button data-q="${i}" data-z="edit">Edit</button><button data-q="${i}" data-z="del" aria-label="Delete">✕</button></span></div>`).join('')||'<p class="mut">No schedules yet.</p>';
   document.querySelectorAll('[data-z]').forEach(b=>b.onclick=()=>{const sc=sched[+b.dataset.q],z=b.dataset.z;
     if(z==='on'){sc.on=!sc.on;delete sRun[sc.id];persist()}
     else if(z==='run'){post('/api/schedules/run',{id:sc.id});toast('Running '+sc.name);setTimeout(loadSched,1500)}
@@ -509,7 +515,7 @@ $('#saveShow').onclick=async()=>{if(ti<0)return toast('Add a song first',1);if(!
     const{file}=await r.json(),i=shows.findIndex(x=>x.name===name),sh={id:i>=0?shows[i].id:'show_'+Date.now().toString(36),name,file,cues:JSON.parse(JSON.stringify(cues))};
     if(i>=0)shows[i]=sh;else shows.push(sh);await post('/api/config',{shows});renderShows();fillSShows();toast(`Saved "${name}". Schedule it on the Schedule tab.`)}
   catch(e){toast(e.message,1)}};
-async function loadSched(){const c=await getCfg();if(c.schedules){sched=c.schedules;sRun=c.runs||{};shows=c.shows||[];playing=c.playing||null;fillSShows();renderShows();if(!editId)renderSched()}}
+async function loadSched(){if(schedBusy)return;const c=await getCfg();if(schedBusy)return;if(c.schedules){sched=c.schedules;sRun=c.runs||{};shows=c.shows||[];playing=c.playing||null;fillSShows();renderShows();if(!editId)renderSched()}}
 setInterval(()=>{if(!$('#sched').classList.contains('hide'))loadSched()},5000);
 /* ---------- export / import schedules ---------- */
 $('#expSched').onclick=()=>{const data={type:'lumalink-schedules',version:1,schedules:sched,shows:shows.map(({id,name,file,cues})=>({id,name,file,cues}))};
